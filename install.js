@@ -83,15 +83,18 @@ function downloadFile(url, dest) {
   });
 }
 
+function clearLine() {
+  process.stdout.write("\r\x1B[K");
+}
+
 async function install() {
-  console.log("\n🚀 Installing Proton Drive Desktop...\n");
-  console.log(`📊 Detected: ${platform} (${arch})\n`);
+  process.stdout.write("🚀 Installing Proton Drive Desktop");
 
   try {
-    console.log("📥 Fetching latest release...");
+    process.stdout.write(".");
     const downloadUrl = await getDownloadUrl();
     const filename = downloadUrl.split("/").pop();
-    console.log(`✓ Found: ${filename}\n`);
+    process.stdout.write(".");
 
     const downloads = path.join(os.homedir(), "Downloads");
     if (!fs.existsSync(downloads)) {
@@ -99,35 +102,31 @@ async function install() {
     }
 
     const filepath = path.join(downloads, filename);
+    process.stdout.write(".");
 
-    console.log(`📦 Downloading to ~/Downloads/...\n`);
     await downloadFile(downloadUrl, filepath);
-    console.log("✓ Download complete\n");
+    process.stdout.write(".");
 
     if (platform === "linux") {
-      console.log("🔧 Making executable...\n");
       fs.chmodSync(filepath, 0o755);
     }
+    process.stdout.write(".");
 
-    console.log("✅ Installation complete!\n");
-    console.log(`📍 Location: ${filepath}\n`);
+    clearLine();
+    console.log(`✅ Installed to ~/Downloads/${filename}`);
 
     if (platform === "linux") {
-      console.log(`🚀 To run:\n   ${filepath}\n`);
-      console.log("Or run from terminal:");
-      console.log(`   cd ~/Downloads && ./${filename}\n`);
+      console.log(`   Run: chmod +x ~/Downloads/${filename} && ~/Downloads/${filename}`);
     } else if (platform === "darwin") {
-      console.log(`🚀 Double-click to install, or:\n   open ${filepath}\n`);
+      console.log(`   Run: open ~/Downloads/${filename}`);
     } else if (platform === "win32") {
-      console.log(`🚀 Double-click to run installer, or:\n   start ${filepath}\n`);
+      console.log(`   Run: start ~/Downloads/${filename}`);
     }
 
   } catch (error) {
-    console.error("\n❌ Installation failed:");
-    console.error(`   ${error.message}\n`);
-    console.log("💡 Solutions:");
-    console.log("   1. Check releases: https://github.com/donniedice/protondrive-tauri/releases");
-    console.log("   2. Build from source: npm run build\n");
+    clearLine();
+    console.log(`❌ Failed: ${error.message}`);
+    console.log("   Visit: https://github.com/donniedice/protondrive-tauri/releases");
     process.exit(1);
   }
 }
