@@ -4,6 +4,9 @@ on:
   push:
     tags: [ 'v*' ]
 
+permissions:
+  contents: write
+
 jobs:
   create-release:
     runs-on: ubuntu-latest
@@ -18,9 +21,9 @@ jobs:
           ## Installation
 
           ### One-Line Install
-          \`\`\`bash
-          npx protondrive-tauri
-          \`\`\`
+          ```bash
+          npx github:donniedice/protondrive-tauri
+          ```
 
           ### Manual Download
           - **Linux**: Download the .AppImage, .deb, or .rpm file below
