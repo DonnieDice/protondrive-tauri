@@ -46,7 +46,7 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
           npm run build --workspace proton-drive
           cd ..
 
@@ -98,7 +98,7 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
           npm run build --workspace proton-drive
           cd ..
 
@@ -142,7 +142,7 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm ci --legacy-peer-deps
+          npm install --legacy-peer-deps
           npm run build --workspace proton-drive
           cd ..
 
