@@ -4,120 +4,115 @@ Fast, lightweight desktop client for Proton Drive with end-to-end encryption. Bu
 
 ## Installation
 
-### One-Line Install
-
 ```bash
 npx github:donniedice/protondrive-tauri
 ```
 
-The installer will automatically:
-- Detect your OS and architecture
-- Download the latest binary
-- Install to proper system location (not Downloads)
-- Add to applications menu / PATH
-- No manual setup needed
+That's it! The installer automatically:
+- Detects your OS and architecture
+- Downloads the latest binary
+- Installs to proper system location
+- Adds to applications menu
+- **No manual steps needed**
 
-**What it does per platform:**
+---
 
-- **Linux**: Installs to `~/.local/bin/proton-drive` and adds to applications menu
-- **macOS**: Installs to `~/Applications/` and adds to Launchpad
-- **Windows**: Runs native installer to Program Files
+## Features
 
-## Building from Source
+- ✅ Lightweight (~50MB vs 200MB+ for Electron)
+- ✅ Fast startup and minimal memory usage
+- ✅ Native system integration (tray, notifications, menus)
+- ✅ End-to-end encrypted (all Proton Drive security features)
+- ✅ Cross-platform (Linux, macOS, Windows)
+- ✅ One-line install via npx
 
-### Prerequisites
+---
 
-- Node.js 18+
-- Rust (install from https://rustup.rs/)
-- Build tools:
-  - **Linux**: `sudo apt install build-essential libssl-dev pkg-config`
-  - **macOS**: `xcode-select --install`
-  - **Windows**: Visual Studio Build Tools
+## For Developers
 
-### Build Steps
+### Development Setup
 
 ```bash
 git clone --depth=1 --recurse-submodules https://github.com/donniedice/protondrive-tauri.git
 cd protondrive-tauri
 npm install
-npm run build
+npm run dev
 ```
 
-Binaries are created in `src-tauri/target/release/bundle/`
+Changes hot-reload automatically.
 
-### Releasing
+### Build Commands
 
-1. Build binaries (see above)
-2. Go to [GitHub Releases](https://github.com/donniedice/protondrive-tauri/releases)
-3. Edit the release and upload files from `src-tauri/target/release/bundle/`
-4. Users can then install with: `npx github:donniedice/protondrive-tauri`
+```bash
+npm run build           # Build all distributions
+npm run build:appimage # Linux AppImage only
+npm run build:deb      # Debian/Ubuntu DEB
+npm run build:rpm      # Fedora/RHEL RPM
+```
 
-## Project Structure
+### Project Structure
 
 ```
-src-tauri/          # Rust backend
+src-tauri/          # Rust backend (Tauri)
 ├── src/main.rs     # IPC commands, system tray, menus
 ├── Cargo.toml      # Rust dependencies
-└── tauri.conf.json # Configuration
+└── tauri.conf.json # App configuration
 
 WebClients/         # Proton Drive web app (git submodule)
 └── applications/drive/
     └── src/        # React/TypeScript source
 
 install.js          # NPX installer script
-package.json        # Build scripts
+package.json        # Build scripts & dependencies
 ```
 
-## Development
+### Releasing
 
-```bash
-npm install
-npm run dev
-```
+1. Commit changes and push
+2. Create a tag:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. GitHub Actions automatically:
+   - Builds for Linux, macOS, and Windows
+   - Creates GitHub Release
+   - Uploads all binaries
+4. Users install with: `npx github:donniedice/protondrive-tauri`
 
-Hot-reload enabled - changes reflect instantly.
+### Available IPC Commands
 
-## Available Commands
-
-```bash
-npm run dev             # Development mode
-npm run build           # Build all distributions
-npm run build:appimage  # Linux AppImage only
-npm run build:deb       # Debian/Ubuntu package
-npm run build:rpm       # Fedora/RHEL package
-```
-
-## Rust Backend Commands
-
-Available IPC commands from the frontend:
+From React/TypeScript frontend:
 
 ```typescript
 import { invoke } from "@tauri-apps/api/tauri";
 
-// Show notification
+// Notifications
 await invoke("show_notification", {
   title: "Upload complete",
   body: "Files synced"
 });
 
-// File dialog
+// File dialogs
 const folder = await invoke("open_file_dialog");
 
-// Get version
+// App info
 const version = await invoke("get_app_version");
-
-// Check updates
 const hasUpdate = await invoke("check_for_updates");
 ```
 
-## Features
+---
 
-- ✅ Lightweight (~50MB vs 200MB+ for Electron)
-- ✅ Fast startup and low memory usage
-- ✅ Native system integration (tray, notifications, menus)
-- ✅ End-to-end encrypted (all Proton Drive security)
-- ✅ Cross-platform (Linux, macOS, Windows)
-- ✅ One-line install via npx
+## Prerequisites for Development
+
+- Node.js 18+
+- Rust (https://rustup.rs/)
+- Build tools:
+  - **Linux**: `sudo apt install build-essential libssl-dev pkg-config`
+  - **macOS**: `xcode-select --install`
+  - **Windows**: Visual Studio Build Tools
+
+---
 
 ## License
 

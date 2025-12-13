@@ -8,36 +8,113 @@ permissions:
   contents: write
 
 jobs:
-  create-release:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libssl-dev pkg-config
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-builds
+          path: src-tauri/target/release/bundle/
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-builds
+          path: src-tauri/target/release/bundle/
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-builds
+          path: src-tauri/target/release/bundle/
+
+  release:
+    needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create Release Notes
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
         run: |
-          cat > RELEASE_NOTES.md << 'NOTES'
-          # Proton Drive Desktop ${{ github.ref_name }}
+          mkdir -p release
+          find artifacts -type f \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.dmg" -o -name "*.app" -o -name "*.exe" -o -name "*.msi" \) -exec cp {} release/ \;
+          cd release && ls -lah && cd ..
 
-          ## Installation
-
-          ### One-Line Install
-          ```bash
-          npx github:donniedice/protondrive-tauri
-          ```
-
-          ### Manual Download
-          - **Linux**: Download the .AppImage, .deb, or .rpm file below
-          - **macOS**: Download the .dmg file
-          - **Windows**: Download the .exe or .msi file
-
-          ## Checksums
-          All files include SHA256 checksums for verification.
-          NOTES
-
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          body_path: RELEASE_NOTES.md
+          files: release/*
+          body: |
+            # Proton Drive Desktop ${{ github.ref_name }}
+
+            Install with one command:
+            ```bash
+            npx github:donniedice/protondrive-tauri
+            ```
+
+            That's it! Automatic installation for your platform.
           draft: false
           prerelease: false
         env:
