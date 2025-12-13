@@ -8,10 +8,94 @@ on:
 permissions:
   contents: write
 
+env:
+  NODE_VERSION: "18"
+  YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
+
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libssl-dev \
+            pkg-config \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            python3
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Clone and patch Proton WebClients
+        run: |
+          set -euo pipefail
+
+          rm -rf WebClients
+          git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
+          cd WebClients
+
+          cat > fix_deps.py << 'EOF'
+          import json
+          from pathlib import Path
+
+          for pkg in Path('.').rglob('package.json'):
+              if 'node_modules' in str(pkg) or '.yarn' in str(pkg):
+                  continue
+              try:
+                  data = json.loads(pkg.read_text())
+                  modified = False
+                  for section in ('dependencies','devDependencies','peerDependencies','optionalDependencies'):
+                      if section in data:
+                          for k in list(data[section].keys()):
+                              if 'rowsncolumns' in k.lower():
+                                  del data[section][k]
+                                  modified = True
+                  if modified:
+                      pkg.write_text(json.dumps(data, indent=2) + '\n')
+              except Exception:
+                  pass
+          EOF
+
+          python3 fix_deps.py
+          rm -f yarn.lock
+          cd ..
+
+      - name: Build Proton Drive web app
+        run: |
+          cd WebClients
+          corepack enable
+          yarn install --immutable=false
+          yarn workspace proton-drive build
+          cd ..
+
+      - name: Build Tauri (Linux)
+        run: |
+          npm install
+          npm run tauri build -- --bundles appimage,deb,rpm
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-builds
+          path: src-tauri/target/release/bundle/
+
+  build-macos:
+    runs-on: macos-latest
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
@@ -22,67 +106,112 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install system dependencies
+      - name: Clone and patch Proton WebClients
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            libssl-dev \
-            pkg-config \
-            python3
+          set -euo pipefail
+          rm -rf WebClients
+          git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
+          cd WebClients
+          python3 ../fix_deps.py || true
+          rm -f yarn.lock
+          cd ..
 
-      - name: Clone and fix Proton WebClients
+      - name: Build Proton Drive web app
+        run: |
+          cd WebClients
+          corepack enable
+          yarn install --immutable=false
+          yarn workspace proton-drive build
+          cd ..
+
+      - name: Build Tauri (macOS)
+        run: |
+          npm install
+          npm run tauri build
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-builds
+          path: src-tauri/target/release/bundle/
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Clone and patch Proton WebClients
         shell: bash
         run: |
           set -euo pipefail
           rm -rf WebClients
           git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
           cd WebClients
-
-          cat > fix_deps.py << 'EOF'
-          import json
-          from pathlib import Path
-
-          for pkgfile in Path('.').rglob('package.json'):
-              if 'node_modules' in str(pkgfile) or '.yarn' in str(pkgfile):
-                  continue
-              try:
-                  with open(pkgfile) as f:
-                      data = json.load(f)
-                  modified = False
-                  for dep in ('dependencies','devDependencies','peerDependencies','optionalDependencies'):
-                      if dep in data:
-                          for k in list(data[dep].keys()):
-                              if 'rowsncolumns' in k.lower():
-                                  del data[dep][k]
-                                  modified = True
-                  if modified:
-                      with open(pkgfile, 'w') as f:
-                          json.dump(data, f, indent=2)
-                          f.write('\n')
-              except:
-                  pass
-          EOF
-
-          python3 fix_deps.py
+          python ../fix_deps.py || true
           rm -f yarn.lock
+          cd ..
 
       - name: Build Proton Drive web app
+        shell: bash
         run: |
           cd WebClients
           corepack enable
-          yarn install --frozen-lockfile=false
+          yarn install --immutable=false
           yarn workspace proton-drive build
+          cd ..
 
-      - name: Build Tauri
+      - name: Build Tauri (Windows)
         run: |
           npm install
-          npm run tauri build -- --bundles appimage,deb,rpm
+          npm run tauri build
 
-      - name: Upload Linux artifacts
+      - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-builds
+          name: windows-builds
           path: src-tauri/target/release/bundle/
+
+  release:
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release
+        run: |
+          mkdir -p release
+          find artifacts -type f \
+            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \
+               -o -name "*.dmg" -o -name "*.exe" -o -name "*.msi" \) \
+            -exec cp {} release/ \;
+          ls -lah release
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          body: |
+            # Proton Drive Desktop ${{ github.ref_name }}
+
+            Unofficial desktop build of Proton Drive.
+            Built from official ProtonMail WebClients with Tauri.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
