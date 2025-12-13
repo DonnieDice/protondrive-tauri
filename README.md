@@ -1,79 +1,50 @@
 # Proton Drive Desktop
 
-Fast, lightweight desktop client for Proton Drive with end-to-end encryption. Works on Linux, macOS, and Windows.
+Fast, lightweight desktop client for Proton Drive with end-to-end encryption. Built with Tauri for Linux, macOS, and Windows.
 
-## One-Line Install (After First Release)
+## Installation
 
-Once the first release is published:
+### Download & Run
 
-```bash
-npx protondrive-tauri
-```
+Get the latest release from [GitHub Releases](https://github.com/donniedice/protondrive-tauri/releases):
 
-That's it! The installer will:
-1. Detect your OS and architecture
-2. Download the latest binary from GitHub Releases
-3. Save to your Downloads folder
-4. Make it executable (Linux)
-5. Ask if you want to launch
+**Linux:**
+- **AppImage** - Works on all distributions
+  ```bash
+  chmod +x Proton_Drive.AppImage
+  ./Proton_Drive.AppImage
+  ```
+- **Debian/Ubuntu (DEB)**
+  ```bash
+  sudo apt install ./proton-drive.deb
+  ```
+- **Fedora/RHEL (RPM)**
+  ```bash
+  sudo dnf install ./proton-drive.rpm
+  ```
 
-**Status**: First release coming soon via GitHub Actions
+**macOS:**
+- Download `.dmg` file
+- Double-click to mount
+- Drag app to Applications folder
+- Launch from Applications or Launchpad
 
----
-
-## Current Install Methods
-
-While builds are being prepared, use these methods:
-
-### Linux
-
-**AppImage** (works on all distributions):
-```bash
-curl -sL https://github.com/donniedice/protondrive-tauri/releases/download/latest/Proton_Drive.AppImage -o ~/Downloads/ProtonDrive.AppImage && chmod +x ~/Downloads/ProtonDrive.AppImage && ~/Downloads/ProtonDrive.AppImage
-```
-
-**Ubuntu/Debian**:
-```bash
-sudo apt install https://github.com/donniedice/protondrive-tauri/releases/download/latest/proton-drive.deb
-```
-
-**Fedora/RHEL**:
-```bash
-sudo dnf install https://github.com/donniedice/protondrive-tauri/releases/download/latest/proton-drive.rpm
-```
-
-### macOS
-
-```bash
-curl -sL https://github.com/donniedice/protondrive-tauri/releases/download/latest/Proton_Drive.dmg -o ~/Downloads/ProtonDrive.dmg && open ~/Downloads/ProtonDrive.dmg
-```
-
-### Windows
-
-Download from [Releases](https://github.com/donniedice/protondrive-tauri/releases) and run the installer.
-
----
+**Windows:**
+- Download `.exe` or `.msi` installer
+- Run the installer
+- Launch from Start Menu
 
 ## Features
 
-- **Lightweight**: ~50MB bundle size (vs ~200MB+ for Electron)
-- **Fast**: Instant startup, minimal memory usage
-- **Native Integration**: System tray, notifications, file dialogs
-- **Secure**: End-to-end encryption, no data stored locally
+- **Lightweight**: ~50MB (vs 200MB+ for Electron)
+- **Fast**: Instant startup, minimal memory
+- **Native**: System tray, notifications, file dialogs
+- **Secure**: End-to-end encrypted, no local storage
 - **Cross-Platform**: Linux, macOS, Windows
-
-## Usage
-
-1. Install (see above)
-2. Launch the app
-3. Sign in with your Proton Drive account
-4. Files sync automatically
 
 ## For Developers
 
 ### Build from Source
-
-Clone and build locally:
 
 ```bash
 git clone --depth=1 --recurse-submodules https://github.com/donniedice/protondrive-tauri.git
@@ -82,7 +53,7 @@ npm install
 npm run build
 ```
 
-Binaries are in `src-tauri/target/release/bundle/`.
+Binaries appear in `src-tauri/target/release/bundle/`
 
 ### Development
 
@@ -91,21 +62,21 @@ npm install
 npm run dev
 ```
 
-This starts a dev server with hot-reload.
+Hot-reload enabled - changes reflect instantly in the app window.
 
 ### Project Structure
 
 ```
-src-tauri/          # Rust backend (Tauri)
-├── src/main.rs     # IPC commands, system tray, menus
-├── Cargo.toml      # Rust dependencies
-└── tauri.conf.json # App configuration
+src-tauri/          Rust backend (Tauri)
+├── src/main.rs     IPC, system tray, menus
+├── Cargo.toml      Rust dependencies
+└── tauri.conf.json Configuration
 
-WebClients/         # Proton Drive web app (git submodule)
-└── applications/drive/
-    └── src/        # React/TypeScript source
+WebClients/         Proton Drive web app (git submodule)
+├── applications/drive/
+│   └── src/        React/TypeScript source
 
-package.json        # Build scripts and dependencies
+package.json        Build scripts & Node deps
 ```
 
 ### Build Commands
@@ -115,12 +86,13 @@ npm run build           # Build all distributions
 npm run build:appimage # AppImage only
 npm run build:deb      # DEB only
 npm run build:rpm      # RPM only
-npm run dev            # Development with hot-reload
+npm run dev            # Development mode
+make build             # Using Makefile
 ```
 
-### IPC Commands (Rust ↔ React)
+### Available IPC Commands
 
-Available commands from the Rust backend:
+From React/TypeScript:
 
 ```typescript
 import { invoke } from "@tauri-apps/api/tauri";
@@ -131,32 +103,34 @@ await invoke("show_notification", {
   body: "Files are up to date",
 });
 
-// File picker dialog
+// File dialog
 const folder = await invoke("open_file_dialog");
 
-// Get app version
+// App version
 const version = await invoke("get_app_version");
 
-// Check for updates
+// Check updates
 const hasUpdate = await invoke("check_for_updates");
 ```
 
-### Release Process
+## Releasing
 
-1. Create a git tag:
+1. **Update code** and commit
+
+2. **Tag a release**:
    ```bash
    git tag v1.0.0
    git push origin v1.0.0
    ```
 
-2. GitHub Actions automatically:
-   - Builds for Linux, macOS, Windows
-   - Creates a GitHub Release
-   - Uploads all binaries with checksums
+3. **GitHub Actions**:
+   - Triggered by the tag
+   - Creates a release on GitHub
+   - Builds and uploads binaries (when CI/CD is configured)
 
-## Updating WebClients (Proton Drive source)
+4. **Users download** from [Releases](https://github.com/donniedice/protondrive-tauri/releases)
 
-The WebClients repo is included as a submodule. To update:
+## Updating WebClients (Proton Drive Source)
 
 ```bash
 cd WebClients
@@ -164,24 +138,26 @@ git fetch origin
 git checkout <tag-or-commit>
 cd ..
 git add WebClients
-git commit -m "Update WebClients to <version>"
+git commit -m "Update WebClients"
 git push
 ```
 
 ## Troubleshooting
 
-**AppImage won't run**: Make sure it's executable
+**AppImage won't run:**
 ```bash
 chmod +x Proton_Drive.AppImage
 ```
 
-**DEB install fails**: Check dependencies
+**DEB/RPM dependencies missing:**
 ```bash
-sudo apt install libssl3 libwebkit2gtk-4.1 libgtk-3-0
+# Linux dependencies
+sudo apt install libssl3 libwebkit2gtk-4.1
 ```
 
-**Build fails on Linux**: Install build tools
+**Build fails:**
 ```bash
+# Install build tools
 # Ubuntu/Debian
 sudo apt install build-essential libssl-dev pkg-config
 
@@ -198,6 +174,7 @@ AGPL-3.0 - Same as Proton Drive
 
 ## Links
 
-- [Tauri Docs](https://tauri.app/)
-- [Proton Drive](https://github.com/ProtonMail/WebClients)
+- [GitHub](https://github.com/donniedice/protondrive-tauri)
 - [Releases](https://github.com/donniedice/protondrive-tauri/releases)
+- [Tauri](https://tauri.app/)
+- [Proton Drive](https://github.com/ProtonMail/WebClients)

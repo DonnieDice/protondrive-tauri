@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "Proton Drive desktop client built with Tauri",
   "main": "src-tauri/tauri.conf.json",
-  "bin": {
-    "install-protondrive": "./install.js"
-  },
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",

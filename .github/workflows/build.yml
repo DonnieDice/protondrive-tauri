@@ -5,149 +5,37 @@ on:
     tags: [ 'v*' ]
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev pkg-config
-
-      - name: Install Tauri CLI
-        run: npm install
-
-      - name: Build web app
-        run: npm run build:web
-
-      - name: Build Tauri (AppImage, DEB, RPM)
-        run: npm run build
-
-      - name: Prepare artifacts
-        run: |
-          mkdir -p release-artifacts
-          cp src-tauri/target/release/bundle/appimage/*.AppImage release-artifacts/ 2>/dev/null || true
-          cp src-tauri/target/release/bundle/deb/*.deb release-artifacts/ 2>/dev/null || true
-          cp src-tauri/target/release/bundle/rpm/*.rpm release-artifacts/ 2>/dev/null || true
-          cd release-artifacts && sha256sum * > SHA256SUMS && cd ..
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-builds
-          path: release-artifacts/
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install Tauri CLI
-        run: npm install
-
-      - name: Build web app
-        run: npm run build:web
-
-      - name: Build Tauri
-        run: npm run build
-
-      - name: Prepare artifacts
-        run: |
-          mkdir -p release-artifacts
-          cp src-tauri/target/release/bundle/macos/*.app release-artifacts/ 2>/dev/null || true
-          cp src-tauri/target/release/bundle/dmg/*.dmg release-artifacts/ 2>/dev/null || true
-          cd release-artifacts && shasum -a 256 * > SHA256SUMS && cd ..
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-builds
-          path: release-artifacts/
-
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install Tauri CLI
-        run: npm install
-
-      - name: Build web app
-        run: npm run build:web
-
-      - name: Build Tauri
-        run: npm run build
-
-      - name: Prepare artifacts
-        shell: bash
-        run: |
-          mkdir -p release-artifacts
-          cp src-tauri/target/release/bundle/msi/*.msi release-artifacts/ 2>/dev/null || true
-          cp src-tauri/target/release/bundle/nsis/*.exe release-artifacts/ 2>/dev/null || true
-          cd release-artifacts && certutil -hashfile * SHA256 > SHA256SUMS 2>/dev/null || sha256sum * > SHA256SUMS; cd ..
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-builds
-          path: release-artifacts/
-
   create-release:
-    needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: downloads
-
-      - name: Prepare release files
+      - name: Create Release Notes
         run: |
-          mkdir -p release
-          cp downloads/linux-builds/* release/ 2>/dev/null || true
-          cp downloads/macos-builds/* release/ 2>/dev/null || true
-          cp downloads/windows-builds/* release/ 2>/dev/null || true
-          cd release && ls -lah && cd ..
+          cat > RELEASE_NOTES.md << 'NOTES'
+          # Proton Drive Desktop ${{ github.ref_name }}
 
-      - name: Create Release
+          ## Installation
+
+          ### One-Line Install
+          \`\`\`bash
+          npx protondrive-tauri
+          \`\`\`
+
+          ### Manual Download
+          - **Linux**: Download the .AppImage, .deb, or .rpm file below
+          - **macOS**: Download the .dmg file
+          - **Windows**: Download the .exe or .msi file
+
+          ## Checksums
+          All files include SHA256 checksums for verification.
+          NOTES
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: release/**/*
+          body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
