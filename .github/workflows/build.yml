@@ -46,8 +46,8 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm install
-          npm run build --workspace=applications/drive
+          npm ci --legacy-peer-deps
+          npm run build --workspace proton-drive
           cd ..
 
       - name: Build Tauri
@@ -73,7 +73,15 @@ jobs:
 
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned, attempting manual clone..."
-            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
+            git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients &
+            CLONE_PID=$!
+            sleep 180
+            if kill -0 $CLONE_PID 2>/dev/null; then
+              echo "Clone timeout, killing process..."
+              kill $CLONE_PID
+              exit 1
+            fi
+            wait $CLONE_PID
           fi
 
           # Verify
@@ -90,8 +98,8 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm install
-          npm run build --workspace=applications/drive
+          npm ci --legacy-peer-deps
+          npm run build --workspace proton-drive
           cd ..
 
       - name: Build Tauri
@@ -134,8 +142,8 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm install
-          npm run build --workspace=applications/drive
+          npm ci --legacy-peer-deps
+          npm run build --workspace proton-drive
           cd ..
 
       - name: Build Tauri
