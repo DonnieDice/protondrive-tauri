@@ -55,9 +55,18 @@ git clone --recurse-submodules https://github.com/yourusername/protondrive-tauri
 cd protondrive-tauri
 ```
 
-If you already cloned without submodules:
+**Note**: The WebClients submodule is large (~4GB+). If cloning stalls, you can update it separately:
+
 ```bash
-git submodule update --init --recursive
+git submodule init
+git submodule update --depth=1
+```
+
+Or clone the WebClients repository manually to a specific branch/tag:
+
+```bash
+git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
+cd WebClients && git fetch origin <branch-or-tag> && git checkout <branch-or-tag>
 ```
 
 ### 2. Install dependencies
