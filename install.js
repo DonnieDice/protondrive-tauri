@@ -88,11 +88,11 @@ async function animateSpinner(promise, message) {
   try {
     const result = await promise;
     clearInterval(interval);
-    process.stdout.write("\r");
+    process.stdout.write("\r\x1B[K");
     return result;
   } catch (e) {
     clearInterval(interval);
-    process.stdout.write("\r");
+    process.stdout.write("\r\x1B[K");
     throw e;
   }
 }
@@ -134,7 +134,7 @@ async function install() {
     }
 
   } catch (error) {
-    process.stdout.write("\r");
+    process.stdout.write("\r\x1B[K");
     console.log(`❌ ${error.message}`);
     process.exit(1);
   }
