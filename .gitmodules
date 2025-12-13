@@ -1,4 +1,0 @@
-[submodule "WebClients"]
-	path = WebClients
-	url = https://github.com/ProtonMail/WebClients.git
-	shallow = true
