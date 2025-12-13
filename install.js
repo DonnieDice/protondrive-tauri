@@ -37,7 +37,7 @@ function getDownloadUrl() {
           }
 
           if (!release.assets || release.assets.length === 0) {
-            reject(new Error("No binaries uploaded yet. Build and upload with: npm run build"));
+            reject(new Error("No binaries available yet"));
             return;
           }
 
