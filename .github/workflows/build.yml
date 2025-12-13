@@ -13,12 +13,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
-          token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: false
 
       - name: Initialize submodules
         run: |
-          git submodule update --init --recursive --depth=1
+          git config --global http.postBuffer 524288000
+          git submodule update --init --single-branch --depth=1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -54,11 +54,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
 
       - name: Initialize submodules
         run: |
-          git submodule update --init --recursive --depth=1
+          git config --global http.postBuffer 524288000
+          git submodule update --init --single-branch --depth=1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -89,11 +90,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
 
       - name: Initialize submodules
         run: |
-          git submodule update --init --recursive --depth=1
+          git config --global http.postBuffer 524288000
+          git submodule update --init --single-branch --depth=1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
