@@ -23,7 +23,7 @@ jobs:
           # Check if WebClients was cloned
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned by checkout action, attempting manual clone..."
-            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients || true
+            timeout 300 git clone https://github.com/ProtonMail/WebClients.git WebClients || true
           fi
 
           echo "=== Final check ==="
@@ -74,9 +74,9 @@ jobs:
 
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned, attempting manual clone..."
-            git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients &
+            git clone https://github.com/ProtonMail/WebClients.git WebClients &
             CLONE_PID=$!
-            sleep 180
+            sleep 300
             if kill -0 $CLONE_PID 2>/dev/null; then
               echo "Clone timeout, killing process..."
               kill $CLONE_PID
@@ -128,7 +128,7 @@ jobs:
 
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned, attempting manual clone..."
-            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
+            timeout 300 git clone https://github.com/ProtonMail/WebClients.git WebClients
           fi
 
           [ -d "WebClients" ] && echo "✓ WebClients cloned successfully" || (echo "✗ Failed to clone WebClients" && exit 1)
