@@ -37,7 +37,7 @@ function getDownloadUrl() {
           }
 
           if (!release.assets || release.assets.length === 0) {
-            reject(new Error("No assets in release"));
+            reject(new Error("No binaries uploaded yet. Build and upload with: npm run build"));
             return;
           }
 
@@ -45,7 +45,8 @@ function getDownloadUrl() {
           const asset = release.assets.find((a) => a.name.includes(ext));
 
           if (!asset) {
-            reject(new Error(`No ${ext} binary found`));
+            const available = release.assets.map(a => a.name).join(", ");
+            reject(new Error(`No ${ext} found. Available: ${available}`));
             return;
           }
 
@@ -134,11 +135,12 @@ Terminal=false`;
   fs.writeFileSync(desktopFile, desktopContent);
 
   try {
-    execSync("update-desktop-database ~/.local/share/applications", { stdio: "ignore" });
+    execSync("update-desktop-database ~/.local/share/applications 2>/dev/null", { stdio: "ignore" });
   } catch {}
 
   console.log(`✅ Installed to ~/.local/bin/proton-drive`);
-  console.log(`   Available in applications menu`);
+  console.log(`   Launch: proton-drive`);
+  console.log(`   Or find in Applications menu`);
 }
 
 async function installMacOS(downloadUrl, filename) {
@@ -154,7 +156,7 @@ async function installMacOS(downloadUrl, filename) {
   }
 
   try {
-    execSync(`hdiutil attach "${tempFile}"`, { stdio: "pipe" });
+    execSync(`hdiutil attach "${tempFile}" -quiet`, { stdio: "pipe" });
     const volumes = fs.readdirSync("/Volumes");
     const volume = volumes.find((v) => v.includes("Proton") || v.includes("Drive"));
 
@@ -167,14 +169,13 @@ async function installMacOS(downloadUrl, filename) {
       }
 
       execSync(`cp -r "${srcApp}" "${dstApp}"`);
-      execSync(`hdiutil detach "/Volumes/${volume}"`);
+      execSync(`hdiutil detach "/Volumes/${volume}" -quiet`);
 
       console.log(`✅ Installed to ~/Applications/Proton Drive.app`);
       console.log(`   Available in Launchpad`);
     }
   } catch (e) {
-    console.log(`✅ Downloaded to /tmp/${filename}`);
-    console.log(`   Double-click to install: open /tmp/${filename}`);
+    throw new Error("Failed to install DMG. Try manual install: open /tmp/" + filename);
   }
 
   fs.unlinkSync(tempFile);
@@ -187,13 +188,13 @@ async function installWindows(downloadUrl, filename) {
     "Downloading installer..."
   );
 
-  console.log(`✅ Downloaded: ${tempFile}`);
-  console.log(`   Running installer...`);
+  console.log(`✅ Downloaded installer`);
+  console.log(`   Running setup...`);
 
   try {
     execSync(`"${tempFile}"`, { stdio: "inherit" });
   } catch {
-    console.log(`   Double-click to run: ${tempFile}`);
+    console.log(`   If installer didn't start, run: "${tempFile}"`);
   }
 }
 
@@ -219,6 +220,13 @@ async function install() {
   } catch (error) {
     process.stdout.write("\r\x1B[K");
     console.log(`❌ ${error.message}`);
+    console.log("");
+    console.log("📋 To build and upload binaries:");
+    console.log("   1. npm install");
+    console.log("   2. npm run build");
+    console.log("   3. Upload from src-tauri/target/release/bundle/ to GitHub Releases");
+    console.log("");
+    console.log("🔗 Release page: https://github.com/donniedice/protondrive-tauri/releases/tag/v1.0.0");
     process.exit(1);
   }
 }
