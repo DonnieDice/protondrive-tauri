@@ -4,7 +4,22 @@ Fast, lightweight desktop client for Proton Drive with end-to-end encryption. Bu
 
 ## Installation
 
-### Download & Run
+### One-Line Install
+
+```bash
+npx github:donniedice/protondrive-tauri
+```
+
+That's it! The installer will:
+1. Detect your OS and architecture
+2. Download the latest binary from GitHub
+3. Save to your Downloads folder
+4. Make it executable (Linux)
+5. Show you where to run it
+
+---
+
+### Manual Download
 
 Get the latest release from [GitHub Releases](https://github.com/donniedice/protondrive-tauri/releases):
 
