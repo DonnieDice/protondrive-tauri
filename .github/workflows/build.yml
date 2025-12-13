@@ -18,20 +18,14 @@ jobs:
       - name: Initialize submodules
         run: |
           git config --global http.postBuffer 1024m
-          echo "=== Checking .gitmodules ==="
-          cat .gitmodules
-          echo "=== Before init ==="
-          git submodule status
+          git config --global http.timeout 300
+          echo "=== Git submodule init ==="
           git submodule init
-          echo "=== After init, before update ==="
-          git submodule status
-          timeout 120 git submodule update --depth=1 2>&1 || true
-          echo "=== After update ==="
-          git submodule status
-          echo "=== List WebClients ==="
-          ls -la WebClients/ || echo "WebClients not found"
-          echo "=== List drive path ==="
-          find . -name "drive" -type d 2>/dev/null | head -5 || echo "No drive dir found"
+          echo "=== Git submodule update verbose ==="
+          GIT_TRACE=1 git submodule update --depth=1 --recursive 2>&1 | head -200 || true
+          echo "=== Checking if WebClients exists ==="
+          [ -d "WebClients" ] && echo "✓ WebClients directory exists" || echo "✗ WebClients directory MISSING"
+          [ -f "WebClients/.gitmodules" ] && echo "✓ WebClients/.gitmodules found" || echo "✗ WebClients/.gitmodules missing"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
