@@ -14,33 +14,64 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone WebClients at latest Drive release
+      - name: Clone and fix WebClients
         run: |
-          git config --global http.postBuffer 2048m
-          git config --global http.timeout 600
+          set -e
           
           rm -rf WebClients
           
-          echo "Cloning WebClients repository..."
-          git clone https://github.com/ProtonMail/WebClients.git WebClients
+          echo "📥 Cloning WebClients..."
+          git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
           
           cd WebClients
           
-          # Use the latest proton-drive release tag
-          DRIVE_TAG=$(git tag -l 'proton-drive@*' --sort=-version:refname | head -n 1)
+          echo "🔧 Fixing broken dependencies..."
           
-          if [ -n "$DRIVE_TAG" ]; then
-            echo "Checking out Drive tag: $DRIVE_TAG"
-            git checkout "$DRIVE_TAG"
-          else
-            echo "No Drive tag found, using main"
+          # Find ALL package.json files and remove @rowsncolumns references
+          find . -name "package.json" -type f -not -path "*/node_modules/*" -not -path "*/.yarn/*" | while read pkgfile; do
+            echo "Checking $pkgfile"
+            
+            # Use Python to properly remove the dependency from JSON
+            python3 -c '
+import json
+import sys
+
+pkgfile = "'"$pkgfile"'"
+
+try:
+    with open(pkgfile, "r") as f:
+        data = json.load(f)
+    
+    modified = False
+    
+    # Remove from all dependency types
+    for deptype in ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]:
+        if deptype in data:
+            for key in list(data[deptype].keys()):
+                if "rowsncolumns" in key.lower():
+                    print(f"  Removing {key} from {deptype}")
+                    del data[deptype][key]
+                    modified = True
+    
+    if modified:
+        with open(pkgfile, "w") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+        print(f"✓ Modified {pkgfile}")
+except Exception as e:
+    print(f"  Error processing {pkgfile}: {e}")
+'
+          done
+          
+          # Also remove it from yarn.lock if it exists
+          if [ -f "yarn.lock" ]; then
+            echo "🧹 Cleaning yarn.lock..."
+            rm -f yarn.lock
           fi
           
           cd ..
           
-          echo "=== Verification ==="
-          [ -d "WebClients" ] && echo "✓ WebClients exists"
-          [ -f "WebClients/applications/drive/package.json" ] && echo "✓ Drive package.json found"
+          echo "✅ WebClients fixed and ready"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -53,25 +84,33 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libssl-dev pkg-config
+          sudo apt-get install -y build-essential libssl-dev pkg-config python3
 
       - name: Build web app
         run: |
           cd WebClients
           
-          # Use Node 18's corepack for Yarn 4
           corepack enable
           
-          echo "Installing dependencies..."
+          echo "📦 Installing dependencies..."
           yarn install
           
-          echo "Building Proton Drive..."
+          echo "🏗️  Building Proton Drive..."
           yarn workspace proton-drive build
           
+          # Verify build output exists
+          if [ ! -d "applications/drive/dist" ]; then
+            echo "❌ Build failed - dist directory not found"
+            exit 1
+          fi
+          
+          echo "✅ Build successful"
           cd ..
 
       - name: Build Tauri
-        run: npm run tauri build -- --bundles appimage,deb,rpm
+        run: |
+          npm install
+          npm run tauri build -- --bundles appimage,deb,rpm
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -85,19 +124,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone WebClients at latest Drive release
+      - name: Clone and fix WebClients
         run: |
-          git config --global http.postBuffer 2048m
-          git config --global http.timeout 600
-          
+          set -e
           rm -rf WebClients
-          git clone https://github.com/ProtonMail/WebClients.git WebClients
+          git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
           
           cd WebClients
-          DRIVE_TAG=$(git tag -l 'proton-drive@*' --sort=-version:refname | head -n 1)
-          if [ -n "$DRIVE_TAG" ]; then
-            git checkout "$DRIVE_TAG"
-          fi
+          
+          find . -name "package.json" -type f -not -path "*/node_modules/*" -not -path "*/.yarn/*" | while read pkgfile; do
+            python3 -c '
+import json
+pkgfile = "'"$pkgfile"'"
+try:
+    with open(pkgfile, "r") as f:
+        data = json.load(f)
+    modified = False
+    for deptype in ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]:
+        if deptype in data:
+            for key in list(data[deptype].keys()):
+                if "rowsncolumns" in key.lower():
+                    del data[deptype][key]
+                    modified = True
+    if modified:
+        with open(pkgfile, "w") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+except: pass
+'
+          done
+          
+          rm -f yarn.lock
           cd ..
 
       - name: Setup Rust
@@ -117,7 +174,9 @@ jobs:
           cd ..
 
       - name: Build Tauri
-        run: npm run tauri build
+        run: |
+          npm install
+          npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -131,20 +190,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone WebClients at latest Drive release
+      - name: Clone and fix WebClients
         shell: bash
         run: |
-          git config --global http.postBuffer 2048m
-          git config --global http.timeout 600
-          
+          set -e
           rm -rf WebClients
-          git clone https://github.com/ProtonMail/WebClients.git WebClients
+          git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
           
           cd WebClients
-          DRIVE_TAG=$(git tag -l 'proton-drive@*' --sort=-version:refname | head -n 1)
-          if [ -n "$DRIVE_TAG" ]; then
-            git checkout "$DRIVE_TAG"
-          fi
+          
+          find . -name "package.json" -type f -not -path "*/node_modules/*" -not -path "*/.yarn/*" | while read pkgfile; do
+            python -c '
+import json
+pkgfile = "'"$pkgfile"'"
+try:
+    with open(pkgfile, "r") as f:
+        data = json.load(f)
+    modified = False
+    for deptype in ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]:
+        if deptype in data:
+            for key in list(data[deptype].keys()):
+                if "rowsncolumns" in key.lower():
+                    del data[deptype][key]
+                    modified = True
+    if modified:
+        with open(pkgfile, "w") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+except: pass
+'
+          done
+          
+          rm -f yarn.lock
           cd ..
 
       - name: Setup Rust
@@ -165,7 +242,9 @@ jobs:
           cd ..
 
       - name: Build Tauri
-        run: npm run tauri build
+        run: |
+          npm install
+          npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -197,7 +276,9 @@ jobs:
           body: |
             # Proton Drive Desktop ${{ github.ref_name }}
 
-            **Official Proton Drive release** wrapped in a native desktop app
+            **Unofficial Linux desktop client for Proton Drive**
+            
+            Built from official ProtonMail WebClients source with build fixes applied.
 
             Install with one command:
             ```bash
