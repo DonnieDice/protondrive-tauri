@@ -46,8 +46,9 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm install --legacy-peer-deps
-          npm run build --workspace proton-drive
+          corepack enable
+          yarn install
+          yarn workspace proton-drive build
           cd ..
 
       - name: Build Tauri
@@ -98,8 +99,9 @@ jobs:
       - name: Build web app
         run: |
           cd WebClients
-          npm install --legacy-peer-deps
-          npm run build --workspace proton-drive
+          corepack enable
+          yarn install
+          yarn workspace proton-drive build
           cd ..
 
       - name: Build Tauri
@@ -140,10 +142,12 @@ jobs:
           node-version: '18'
 
       - name: Build web app
+        shell: bash
         run: |
           cd WebClients
-          npm install --legacy-peer-deps
-          npm run build --workspace proton-drive
+          corepack enable
+          yarn install
+          yarn workspace proton-drive build
           cd ..
 
       - name: Build Tauri
