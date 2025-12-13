@@ -14,38 +14,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone WebClients at specific stable tag
+      - name: Clone WebClients at latest Drive release
         run: |
           git config --global http.postBuffer 2048m
           git config --global http.timeout 600
           
-          # Remove any existing WebClients directory
           rm -rf WebClients
           
-          # Clone and checkout the latest stable release that works
-          # Using a known good release tag before Sheets integration
           echo "Cloning WebClients repository..."
           git clone https://github.com/ProtonMail/WebClients.git WebClients
           
           cd WebClients
           
-          # Try to find and use the most recent stable tag
-          # If this fails, we'll use main branch
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          # Use the latest proton-drive release tag
+          DRIVE_TAG=$(git tag -l 'proton-drive@*' --sort=-version:refname | head -n 1)
           
-          if [ -n "$LATEST_TAG" ]; then
-            echo "Checking out tag: $LATEST_TAG"
-            git checkout "$LATEST_TAG"
+          if [ -n "$DRIVE_TAG" ]; then
+            echo "Checking out Drive tag: $DRIVE_TAG"
+            git checkout "$DRIVE_TAG"
           else
-            echo "No tags found, using main branch"
+            echo "No Drive tag found, using main"
           fi
           
           cd ..
           
           echo "=== Verification ==="
-          [ -d "WebClients" ] && echo "✓ WebClients directory exists" || echo "✗ WebClients directory MISSING"
-          [ -f "WebClients/applications/drive/package.json" ] && echo "✓ Found drive package.json" || echo "✗ drive folder not found"
-          [ -f "WebClients/package.json" ] && echo "✓ Found root package.json" || echo "✗ root package.json not found"
+          [ -d "WebClients" ] && echo "✓ WebClients exists"
+          [ -f "WebClients/applications/drive/package.json" ] && echo "✓ Drive package.json found"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -60,29 +55,16 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libssl-dev pkg-config
 
-      - name: Build web app with error handling
+      - name: Build web app
         run: |
           cd WebClients
           
-          # Enable corepack for Yarn 4
+          # Use Node 18's corepack for Yarn 4
           corepack enable
           
-          # Try installing dependencies with fallback
-          echo "Installing monorepo dependencies..."
-          if ! yarn install; then
-            echo "Standard install failed, trying with skip-build mode..."
-            yarn install --mode=skip-build || {
-              echo "Install failed completely. Trying to manually patch..."
-              
-              # Remove problematic workspace references from package.json files
-              find . -name "package.json" -type f -exec sed -i 's/"@rowsncolumns\/charts": "workspace:\^"/"@rowsncolumns\/charts": "*"/g' {} \;
-              
-              # Try again
-              yarn install --mode=skip-build
-            }
-          fi
+          echo "Installing dependencies..."
+          yarn install
           
-          # Build Drive
           echo "Building Proton Drive..."
           yarn workspace proton-drive build
           
@@ -103,25 +85,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone WebClients at specific stable tag
+      - name: Clone WebClients at latest Drive release
         run: |
           git config --global http.postBuffer 2048m
           git config --global http.timeout 600
           
           rm -rf WebClients
-          
-          echo "Cloning WebClients repository..."
           git clone https://github.com/ProtonMail/WebClients.git WebClients
           
           cd WebClients
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$LATEST_TAG" ]; then
-            echo "Checking out tag: $LATEST_TAG"
-            git checkout "$LATEST_TAG"
+          DRIVE_TAG=$(git tag -l 'proton-drive@*' --sort=-version:refname | head -n 1)
+          if [ -n "$DRIVE_TAG" ]; then
+            git checkout "$DRIVE_TAG"
           fi
           cd ..
-          
-          [ -d "WebClients" ] && echo "✓ WebClients cloned successfully" || exit 1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -131,19 +108,11 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Build web app with error handling
+      - name: Build web app
         run: |
           cd WebClients
           corepack enable
-          
-          if ! yarn install; then
-            echo "Standard install failed, trying with skip-build mode..."
-            yarn install --mode=skip-build || {
-              find . -name "package.json" -type f -exec sed -i '' 's/"@rowsncolumns\/charts": "workspace:\^"/"@rowsncolumns\/charts": "*"/g' {} \;
-              yarn install --mode=skip-build
-            }
-          fi
-          
+          yarn install
           yarn workspace proton-drive build
           cd ..
 
@@ -162,26 +131,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clone WebClients at specific stable tag
+      - name: Clone WebClients at latest Drive release
         shell: bash
         run: |
           git config --global http.postBuffer 2048m
           git config --global http.timeout 600
           
           rm -rf WebClients
-          
-          echo "Cloning WebClients repository..."
           git clone https://github.com/ProtonMail/WebClients.git WebClients
           
           cd WebClients
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$LATEST_TAG" ]; then
-            echo "Checking out tag: $LATEST_TAG"
-            git checkout "$LATEST_TAG"
+          DRIVE_TAG=$(git tag -l 'proton-drive@*' --sort=-version:refname | head -n 1)
+          if [ -n "$DRIVE_TAG" ]; then
+            git checkout "$DRIVE_TAG"
           fi
           cd ..
-          
-          [ -d "WebClients" ] && echo "✓ WebClients cloned successfully" || exit 1
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -191,20 +155,12 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Build web app with error handling
+      - name: Build web app
         shell: bash
         run: |
           cd WebClients
           corepack enable
-          
-          if ! yarn install; then
-            echo "Standard install failed, trying with skip-build mode..."
-            yarn install --mode=skip-build || {
-              find . -name "package.json" -type f -exec sed -i 's/"@rowsncolumns\/charts": "workspace:\^"/"@rowsncolumns\/charts": "*"/g' {} \;
-              yarn install --mode=skip-build
-            }
-          fi
-          
+          yarn install
           yarn workspace proton-drive build
           cd ..
 
@@ -241,7 +197,7 @@ jobs:
           body: |
             # Proton Drive Desktop ${{ github.ref_name }}
 
-            **Features:** Drive + Docs (encrypted cloud storage and document editing)
+            **Official Proton Drive release** wrapped in a native desktop app
 
             Install with one command:
             ```bash
