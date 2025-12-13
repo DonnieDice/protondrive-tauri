@@ -3,11 +3,13 @@
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
+const http = require("http");
 const { execSync } = require("child_process");
 const os = require("os");
 
 const REPO = "donniedice/protondrive-tauri";
 const RELEASE_TAG = "latest";
+const API_URL = `https://api.github.com/repos/${REPO}/releases/${RELEASE_TAG}`;
 
 const platform = os.platform();
 const arch = os.arch();
@@ -36,43 +38,47 @@ const archMap = {
 async function getDownloadUrl() {
   return new Promise((resolve, reject) => {
     https
-      .get(
-        `https://api.github.com/repos/${REPO}/releases/${RELEASE_TAG}`,
-        {
-          headers: { "User-Agent": "protondrive-tauri-installer" },
-        },
-        (res) => {
-          let data = "";
-          res.on("data", (chunk) => (data += chunk));
-          res.on("end", () => {
-            try {
-              const release = JSON.parse(data);
-              if (!release.assets || release.assets.length === 0) {
-                reject(new Error("No assets found in release"));
-              }
+      .get(API_URL, {
+        headers: { "User-Agent": "protondrive-tauri-installer" },
+      }, (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => {
+          try {
+            const release = JSON.parse(data);
 
-              const mappedArch = archMap[arch] || "x64";
-              const filename =
-                platformMap[platform]?.[mappedArch] ||
-                "Proton_Drive.AppImage";
-              const asset = release.assets.find((a) =>
-                a.name.includes(filename.replace(/\.[^.]+$/, ""))
-              );
-
-              if (!asset) {
-                reject(
-                  new Error(
-                    `No ${filename} found for ${platform}-${mappedArch}`
-                  )
-                );
-              }
-              resolve(asset.browser_download_url);
-            } catch (e) {
-              reject(e);
+            if (release.message === "Not Found") {
+              reject(new Error("No release found. Visit: https://github.com/donniedice/protondrive-tauri/releases"));
             }
-          });
-        }
-      )
+
+            if (!release.assets || release.assets.length === 0) {
+              reject(new Error("No assets found in release. Builds may still be in progress."));
+            }
+
+            const mappedArch = archMap[arch] || "x64";
+            const filename =
+              platformMap[platform]?.[mappedArch] ||
+              "Proton_Drive.AppImage";
+
+            // Find asset matching the binary name
+            const asset = release.assets.find((a) =>
+              a.name.includes(filename.replace(/\.[^.]+$/, ""))
+            );
+
+            if (!asset) {
+              const available = release.assets.map(a => a.name).join(", ");
+              reject(
+                new Error(
+                  `No ${filename} found for ${platform}-${mappedArch}\nAvailable: ${available}`
+                )
+              );
+            }
+            resolve(asset.browser_download_url);
+          } catch (e) {
+            reject(e);
+          }
+        });
+      })
       .on("error", reject);
   });
 }
@@ -100,9 +106,10 @@ async function downloadFile(url, dest) {
 
 async function install() {
   console.log("🚀 Installing Proton Drive Desktop...\n");
+  console.log(`📊 Platform: ${platform} (${arch})\n`);
 
   try {
-    console.log("📥 Fetching latest release...");
+    console.log("📥 Fetching latest release from GitHub...");
     const downloadUrl = await getDownloadUrl();
     console.log(`✓ Found: ${downloadUrl}\n`);
 
@@ -166,11 +173,12 @@ async function install() {
       );
     }
   } catch (error) {
-    console.error("❌ Installation failed:");
+    console.error("\n❌ Installation failed:");
     console.error(`   ${error.message}\n`);
-    console.log(
-      "Manual install: https://github.com/donniedice/protondrive-tauri/releases"
-    );
+    console.log("💡 What you can do:");
+    console.log("   1. Check releases: https://github.com/donniedice/protondrive-tauri/releases");
+    console.log("   2. Wait for builds to complete (GitHub Actions)");
+    console.log("   3. Build from source: https://github.com/donniedice/protondrive-tauri#build-from-source\n");
     process.exit(1);
   }
 }

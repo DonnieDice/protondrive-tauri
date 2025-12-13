@@ -2,7 +2,9 @@
 
 Fast, lightweight desktop client for Proton Drive with end-to-end encryption. Works on Linux, macOS, and Windows.
 
-## One-Line Install
+## One-Line Install (After First Release)
+
+Once the first release is published:
 
 ```bash
 npx protondrive-tauri
@@ -10,16 +12,18 @@ npx protondrive-tauri
 
 That's it! The installer will:
 1. Detect your OS and architecture
-2. Download the latest binary
+2. Download the latest binary from GitHub Releases
 3. Save to your Downloads folder
-4. Make it executable
-5. Ask if you want to launch it
+4. Make it executable (Linux)
+5. Ask if you want to launch
+
+**Status**: First release coming soon via GitHub Actions
 
 ---
 
-## Manual Install
+## Current Install Methods
 
-If you prefer to download directly:
+While builds are being prepared, use these methods:
 
 ### Linux
 
