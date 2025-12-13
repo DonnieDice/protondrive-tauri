@@ -18,8 +18,20 @@ jobs:
       - name: Initialize submodules
         run: |
           git config --global http.postBuffer 1024m
+          echo "=== Checking .gitmodules ==="
+          cat .gitmodules
+          echo "=== Before init ==="
+          git submodule status
           git submodule init
-          git submodule update --depth=1 --jobs 4
+          echo "=== After init, before update ==="
+          git submodule status
+          timeout 120 git submodule update --depth=1 2>&1 || true
+          echo "=== After update ==="
+          git submodule status
+          echo "=== List WebClients ==="
+          ls -la WebClients/ || echo "WebClients not found"
+          echo "=== List drive path ==="
+          find . -name "drive" -type d 2>/dev/null | head -5 || echo "No drive dir found"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -59,9 +71,8 @@ jobs:
 
       - name: Initialize submodules
         run: |
-          git config --global http.postBuffer 1024m
-          git submodule init
-          git submodule update --depth=1 --jobs 4
+          echo "Skipping build-macos in debug mode"
+          exit 0
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -96,9 +107,8 @@ jobs:
 
       - name: Initialize submodules
         run: |
-          git config --global http.postBuffer 1024m
-          git submodule init
-          git submodule update --depth=1 --jobs 4
+          echo "Skipping build-windows in debug mode"
+          exit 0
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
