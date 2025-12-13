@@ -3,8 +3,8 @@
 const fs = require("fs");
 const path = require("path");
 const https = require("https");
-const { execSync } = require("child_process");
 const os = require("os");
+const { execSync } = require("child_process");
 
 const REPO = "donniedice/protondrive-tauri";
 const API_URL = `https://api.github.com/repos/${REPO}/releases/latest`;
@@ -15,7 +15,7 @@ const arch = os.arch();
 const extensionMap = {
   linux: { x64: ".AppImage", arm64: ".AppImage" },
   darwin: { x64: ".dmg", arm64: ".dmg" },
-  win32: { x64: ".exe", arm64: ".exe" },
+  win32: { x64: ".exe", arm64: ".msi" },
 };
 
 const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
@@ -97,6 +97,106 @@ async function animateSpinner(promise, message) {
   }
 }
 
+async function installLinux(downloadUrl, filename) {
+  const tempFile = path.join("/tmp", filename);
+  await animateSpinner(
+    downloadFile(downloadUrl, tempFile),
+    "Downloading binary..."
+  );
+
+  const installDir = path.join(process.env.HOME, ".local/bin");
+  const installPath = path.join(installDir, "proton-drive");
+
+  if (!fs.existsSync(installDir)) {
+    fs.mkdirSync(installDir, { recursive: true });
+  }
+
+  fs.copyFileSync(tempFile, installPath);
+  fs.chmodSync(installPath, 0o755);
+  fs.unlinkSync(tempFile);
+
+  const desktopFile = path.join(process.env.HOME, ".local/share/applications/protondrive.desktop");
+  const desktopDir = path.dirname(desktopFile);
+  if (!fs.existsSync(desktopDir)) {
+    fs.mkdirSync(desktopDir, { recursive: true });
+  }
+
+  const desktopContent = `[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Proton Drive
+Comment=Encrypted cloud storage
+Exec=${installPath}
+Icon=folder
+Categories=Utility;
+Terminal=false`;
+
+  fs.writeFileSync(desktopFile, desktopContent);
+
+  try {
+    execSync("update-desktop-database ~/.local/share/applications", { stdio: "ignore" });
+  } catch {}
+
+  console.log(`✅ Installed to ~/.local/bin/proton-drive`);
+  console.log(`   Available in applications menu`);
+}
+
+async function installMacOS(downloadUrl, filename) {
+  const tempFile = path.join("/tmp", filename);
+  await animateSpinner(
+    downloadFile(downloadUrl, tempFile),
+    "Downloading binary..."
+  );
+
+  const appsDir = path.join(process.env.HOME, "Applications");
+  if (!fs.existsSync(appsDir)) {
+    fs.mkdirSync(appsDir, { recursive: true });
+  }
+
+  try {
+    execSync(`hdiutil attach "${tempFile}"`, { stdio: "pipe" });
+    const volumes = fs.readdirSync("/Volumes");
+    const volume = volumes.find((v) => v.includes("Proton") || v.includes("Drive"));
+
+    if (volume) {
+      const srcApp = path.join(`/Volumes/${volume}`, "Proton Drive.app");
+      const dstApp = path.join(appsDir, "Proton Drive.app");
+
+      if (fs.existsSync(dstApp)) {
+        execSync(`rm -rf "${dstApp}"`);
+      }
+
+      execSync(`cp -r "${srcApp}" "${dstApp}"`);
+      execSync(`hdiutil detach "/Volumes/${volume}"`);
+
+      console.log(`✅ Installed to ~/Applications/Proton Drive.app`);
+      console.log(`   Available in Launchpad`);
+    }
+  } catch (e) {
+    console.log(`✅ Downloaded to /tmp/${filename}`);
+    console.log(`   Double-click to install: open /tmp/${filename}`);
+  }
+
+  fs.unlinkSync(tempFile);
+}
+
+async function installWindows(downloadUrl, filename) {
+  const tempFile = path.join(process.env.TEMP, filename);
+  await animateSpinner(
+    downloadFile(downloadUrl, tempFile),
+    "Downloading installer..."
+  );
+
+  console.log(`✅ Downloaded: ${tempFile}`);
+  console.log(`   Running installer...`);
+
+  try {
+    execSync(`"${tempFile}"`, { stdio: "inherit" });
+  } catch {
+    console.log(`   Double-click to run: ${tempFile}`);
+  }
+}
+
 async function install() {
   try {
     const downloadUrl = await animateSpinner(
@@ -105,32 +205,15 @@ async function install() {
     );
 
     const filename = downloadUrl.split("/").pop();
-    const downloads = path.join(os.homedir(), "Downloads");
-    if (!fs.existsSync(downloads)) {
-      fs.mkdirSync(downloads, { recursive: true });
-    }
-    const filepath = path.join(downloads, filename);
-
-    await animateSpinner(
-      downloadFile(downloadUrl, filepath),
-      "Downloading binary..."
-    );
 
     if (platform === "linux") {
-      await animateSpinner(
-        Promise.resolve(fs.chmodSync(filepath, 0o755)),
-        "Setting permissions..."
-      );
-    }
-
-    console.log(`✅ Installed to ~/Downloads/${filename}`);
-
-    if (platform === "linux") {
-      console.log(`   ${filepath}`);
+      await installLinux(downloadUrl, filename);
     } else if (platform === "darwin") {
-      console.log(`   open ~/Downloads/${filename}`);
+      await installMacOS(downloadUrl, filename);
     } else if (platform === "win32") {
-      console.log(`   start ~/Downloads/${filename}`);
+      await installWindows(downloadUrl, filename);
+    } else {
+      throw new Error(`Unsupported platform: ${platform}`);
     }
 
   } catch (error) {
