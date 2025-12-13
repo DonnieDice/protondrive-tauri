@@ -13,19 +13,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: false
+          submodules: recursive
 
-      - name: Initialize submodules
+      - name: Configure submodule and retry if needed
         run: |
           git config --global http.postBuffer 1024m
           git config --global http.timeout 300
-          echo "=== Git submodule init ==="
-          git submodule init
-          echo "=== Git submodule update verbose ==="
-          GIT_TRACE=1 git submodule update --depth=1 --recursive 2>&1 | head -200 || true
-          echo "=== Checking if WebClients exists ==="
+
+          # Check if WebClients was cloned
+          if [ ! -d "WebClients" ]; then
+            echo "WebClients not cloned by checkout action, attempting manual clone..."
+            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients || true
+          fi
+
+          echo "=== Final check ==="
           [ -d "WebClients" ] && echo "✓ WebClients directory exists" || echo "✗ WebClients directory MISSING"
-          [ -f "WebClients/.gitmodules" ] && echo "✓ WebClients/.gitmodules found" || echo "✗ WebClients/.gitmodules missing"
+          [ -f "WebClients/applications/drive/package.json" ] && echo "✓ Found drive package.json" || echo "✗ drive folder not found"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -61,12 +64,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: false
+          submodules: recursive
 
-      - name: Initialize submodules
+      - name: Configure submodule and retry if needed
         run: |
-          echo "Skipping build-macos in debug mode"
-          exit 0
+          git config --global http.postBuffer 1024m
+          git config --global http.timeout 300
+
+          if [ ! -d "WebClients" ]; then
+            echo "WebClients not cloned, attempting manual clone..."
+            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients || true
+          fi
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -97,12 +105,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: false
+          submodules: recursive
 
-      - name: Initialize submodules
+      - name: Configure submodule and retry if needed
         run: |
-          echo "Skipping build-windows in debug mode"
-          exit 0
+          git config --global http.postBuffer 1024m
+          git config --global http.timeout 300
+
+          if (!(Test-Path "WebClients")) {
+            Write-Host "WebClients not cloned, attempting manual clone..."
+            & git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
+          }
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
