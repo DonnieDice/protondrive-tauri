@@ -45,10 +45,10 @@ jobs:
 
       - name: Build web app
         run: |
-          cd WebClients/applications/drive
+          cd WebClients
           npm install
-          npm run build
-          cd ../../..
+          npm run build --workspace=applications/drive
+          cd ..
 
       - name: Build Tauri
         run: npm run tauri build -- --bundles appimage,deb,rpm
@@ -73,8 +73,11 @@ jobs:
 
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned, attempting manual clone..."
-            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients || true
+            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
           fi
+
+          # Verify
+          [ -d "WebClients" ] && echo "✓ WebClients cloned successfully" || (echo "✗ Failed to clone WebClients" && exit 1)
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -86,10 +89,10 @@ jobs:
 
       - name: Build web app
         run: |
-          cd WebClients/applications/drive
+          cd WebClients
           npm install
-          npm run build
-          cd ../../..
+          npm run build --workspace=applications/drive
+          cd ..
 
       - name: Build Tauri
         run: npm run tauri build
@@ -108,14 +111,17 @@ jobs:
           submodules: recursive
 
       - name: Configure submodule and retry if needed
+        shell: bash
         run: |
           git config --global http.postBuffer 1024m
           git config --global http.timeout 300
 
-          if (!(Test-Path "WebClients")) {
-            Write-Host "WebClients not cloned, attempting manual clone..."
-            & git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
-          }
+          if [ ! -d "WebClients" ]; then
+            echo "WebClients not cloned, attempting manual clone..."
+            timeout 180 git clone --depth=1 https://github.com/ProtonMail/WebClients.git WebClients
+          fi
+
+          [ -d "WebClients" ] && echo "✓ WebClients cloned successfully" || (echo "✗ Failed to clone WebClients" && exit 1)
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -127,10 +133,10 @@ jobs:
 
       - name: Build web app
         run: |
-          cd WebClients/applications/drive
+          cd WebClients
           npm install
-          npm run build
-          cd ../../..
+          npm run build --workspace=applications/drive
+          cd ..
 
       - name: Build Tauri
         run: npm run tauri build
