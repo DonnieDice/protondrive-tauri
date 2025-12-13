@@ -18,12 +18,12 @@ jobs:
       - name: Configure submodule and retry if needed
         run: |
           git config --global http.postBuffer 1024m
-          git config --global http.timeout 300
+          git config --global http.timeout 600
 
           # Check if WebClients was cloned
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned by checkout action, attempting manual clone..."
-            timeout 300 git clone https://github.com/ProtonMail/WebClients.git WebClients || true
+            timeout 600 git clone https://github.com/ProtonMail/WebClients.git WebClients || true
           fi
 
           echo "=== Final check ==="
@@ -47,7 +47,14 @@ jobs:
         run: |
           cd WebClients
           corepack enable
-          yarn install
+          
+          # Try to install with focus on drive workspace
+          yarn install || {
+            echo "Full install failed, trying workspaces focus..."
+            yarn workspaces focus proton-drive --production=false || yarn install --mode=skip-build
+          }
+          
+          # Build drive workspace
           yarn workspace proton-drive build
           cd ..
 
@@ -70,13 +77,13 @@ jobs:
       - name: Configure submodule and retry if needed
         run: |
           git config --global http.postBuffer 1024m
-          git config --global http.timeout 300
+          git config --global http.timeout 600
 
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned, attempting manual clone..."
             git clone https://github.com/ProtonMail/WebClients.git WebClients &
             CLONE_PID=$!
-            sleep 300
+            sleep 600
             if kill -0 $CLONE_PID 2>/dev/null; then
               echo "Clone timeout, killing process..."
               kill $CLONE_PID
@@ -100,7 +107,14 @@ jobs:
         run: |
           cd WebClients
           corepack enable
-          yarn install
+          
+          # Try to install with focus on drive workspace
+          yarn install || {
+            echo "Full install failed, trying workspaces focus..."
+            yarn workspaces focus proton-drive --production=false || yarn install --mode=skip-build
+          }
+          
+          # Build drive workspace
           yarn workspace proton-drive build
           cd ..
 
@@ -124,11 +138,11 @@ jobs:
         shell: bash
         run: |
           git config --global http.postBuffer 1024m
-          git config --global http.timeout 300
+          git config --global http.timeout 600
 
           if [ ! -d "WebClients" ]; then
             echo "WebClients not cloned, attempting manual clone..."
-            timeout 300 git clone https://github.com/ProtonMail/WebClients.git WebClients
+            timeout 600 git clone https://github.com/ProtonMail/WebClients.git WebClients
           fi
 
           [ -d "WebClients" ] && echo "✓ WebClients cloned successfully" || (echo "✗ Failed to clone WebClients" && exit 1)
@@ -146,7 +160,14 @@ jobs:
         run: |
           cd WebClients
           corepack enable
-          yarn install
+          
+          # Try to install with focus on drive workspace
+          yarn install || {
+            echo "Full install failed, trying workspaces focus..."
+            yarn workspaces focus proton-drive --production=false || yarn install --mode=skip-build
+          }
+          
+          # Build drive workspace
           yarn workspace proton-drive build
           cd ..
 
