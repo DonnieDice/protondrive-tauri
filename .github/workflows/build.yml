@@ -43,7 +43,7 @@ jobs:
           cd release-artifacts && sha256sum * > SHA256SUMS && cd ..
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: linux-builds
           path: release-artifacts/
@@ -80,7 +80,7 @@ jobs:
           cd release-artifacts && shasum -a 256 * > SHA256SUMS && cd ..
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macos-builds
           path: release-artifacts/
@@ -118,7 +118,7 @@ jobs:
           cd release-artifacts && certutil -hashfile * SHA256 > SHA256SUMS 2>/dev/null || sha256sum * > SHA256SUMS; cd ..
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: windows-builds
           path: release-artifacts/
@@ -127,10 +127,10 @@ jobs:
     needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: downloads
 
