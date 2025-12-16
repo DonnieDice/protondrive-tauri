@@ -1,3 +1,5 @@
+## 🔴This is currently a WIP🔴
+
 # Proton Drive Desktop
 
 Fast, lightweight desktop client for Proton Drive with end-to-end encryption. Built with Tauri for Linux, macOS, and Windows.
