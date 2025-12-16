@@ -1,0 +1,28 @@
+@import '~@proton/styles/scss/lib';
+@import '~@proton/styles/scss/meet/meet-breakpoints';
+
+.meeting-ready-popup-container {
+	inset-inline-start: 0;
+
+	@include media('>medium') {
+		inset-inline-start: 1.75rem;
+	}
+}
+
+.meeting-ready-popup {
+	z-index: 1000;
+	padding-block-start: 4rem !important;
+}
+
+.meeting-ready-popup-meeting-link {
+	text-decoration: none !important;
+}
+
+.copy-meeting-link-button {
+	background-color: var(--interaction-norm-minor-2);
+
+	&:hover,
+	&:focus {
+		background-color: var(--interaction-norm-minor-1) !important;
+	}
+}

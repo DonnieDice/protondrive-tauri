@@ -76,17 +76,11 @@ jobs:
           cd WebClients
           
           echo "📦 Installing WebClients dependencies..."
-          corepack enable
-          corepack prepare yarn@stable --activate
-          
-          # Increase Node memory for large build
           export NODE_OPTIONS="--max-old-space-size=8192"
-          
-          # Install with legacy peer deps to avoid conflicts
-          yarn install --immutable=false || yarn install --immutable=false --network-timeout 300000
-          
+          node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
+
           echo "🔨 Building Proton Drive web app..."
-          yarn workspace proton-drive build
+          node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
           # Verify build output
           if [ ! -d "applications/drive/build" ]; then
@@ -165,12 +159,10 @@ jobs:
           set -euo pipefail
           cd WebClients
           
-          corepack enable
-          corepack prepare yarn@stable --activate
           export NODE_OPTIONS="--max-old-space-size=8192"
           
-          yarn install --immutable=false || yarn install --immutable=false --network-timeout 300000
-          yarn workspace proton-drive build
+          node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
+          node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
           if [ ! -d "applications/drive/build" ]; then
             echo "❌ Build failed"
@@ -244,12 +236,10 @@ jobs:
           set -euo pipefail
           cd WebClients
           
-          corepack enable
-          corepack prepare yarn@stable --activate
           export NODE_OPTIONS="--max-old-space-size=8192"
           
-          yarn install --immutable=false || yarn install --immutable=false --network-timeout 300000
-          yarn workspace proton-drive build
+          node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
+          node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
           if [ ! -d "applications/drive/build" ]; then
             echo "❌ Build failed"

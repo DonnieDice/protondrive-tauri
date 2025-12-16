@@ -1,0 +1,17 @@
+.copy-button-norm {
+	background-color: var(--interaction-norm-minor-2) !important;
+
+	&:hover,
+	&:focus-within {
+		background-color: var(--interaction-norm-minor-1) !important;
+	}
+}
+
+.copy-button-weak {
+	background-color: var(--interaction-weak) !important;
+
+	&:hover,
+	&:focus-within {
+		background-color: var(--interaction-weak-major-1) !important;
+	}
+}

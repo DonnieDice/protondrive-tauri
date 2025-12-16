@@ -17,10 +17,9 @@ python3 fix_deps.py
 # Build WebClients
 echo "🔨 Building WebClients..."
 cd WebClients
-corepack enable
 export NODE_OPTIONS="--max-old-space-size=8192"
-yarn install --immutable=false
-yarn workspace proton-drive build
+node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
+node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
 cd ..
 
 # Build Tauri

@@ -1,0 +1,16 @@
+@import '~@proton/styles/scss/lib';
+@import '~@proton/styles/scss/meet/meet-breakpoints';
+
+.participant-controls-buttons {
+	inline-size: auto;
+	justify-content: center;
+
+	@include media('>medium') {
+		justify-content: initial;
+	}
+}
+
+.participant-controls-title,
+.shield-star {
+	color: var(--meeting-title-color) !important;
+}
