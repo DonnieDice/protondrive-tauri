@@ -6,7 +6,7 @@
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
     "devPath": "http://localhost:5173",
-    "frontendDist": "../WebClients/applications/drive/build"
+    "distDir": "../WebClients/applications/drive/build"
   },
   "app": {
     "windows": [
