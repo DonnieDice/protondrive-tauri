@@ -67,6 +67,7 @@ jobs:
           python3 fix_deps.py
           
           # Remove lockfile to force fresh resolution
+          rm -f WebClients/yarn.lock
 
       - name: Build WebClients (Proton Drive)
         run: |
@@ -74,9 +75,6 @@ jobs:
           
           cd WebClients
           
-          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
-          touch yarn.lock
-
           echo "📦 Installing WebClients dependencies..."
           export NODE_OPTIONS="--max-old-space-size=8192"
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
@@ -105,7 +103,8 @@ jobs:
           
           echo "✅ Tauri build complete"
           find src-tauri/target/release/bundle -type f \
-            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \)
+            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \
+            \)
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -154,6 +153,7 @@ jobs:
           python3 fix_deps.py
           
           # Remove lockfile to force fresh resolution
+          rm -f WebClients/yarn.lock
 
       - name: Build WebClients (Proton Drive)
         run: |
@@ -162,9 +162,7 @@ jobs:
           
           export NODE_OPTIONS="--max-old-space-size=8192"
           
-          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
-          touch yarn.lock
-
+          echo "📦 Installing WebClients dependencies..."
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
           node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
@@ -183,7 +181,8 @@ jobs:
           yarn tauri build -- --bundles app,dmg
           
           find src-tauri/target/release/bundle -type f \
-            \( -name "*.app" -o -name "*.dmg" \)
+            \( -name "*.app" -o -name "*.dmg" \
+            \)
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -220,6 +219,8 @@ jobs:
 
       - name: Clone and patch WebClients
         shell: bash
+        env:
+          PYTHONIOENCODING: utf-8 # Fix UnicodeEncodeError on Windows
         run: |
           set -euo pipefail
           
@@ -232,6 +233,7 @@ jobs:
           python fix_deps.py
           
           # Remove lockfile to force fresh resolution
+          rm -f WebClients/yarn.lock
 
       - name: Build WebClients (Proton Drive)
         shell: bash
@@ -241,9 +243,7 @@ jobs:
           
           export NODE_OPTIONS="--max-old-space-size=8192"
           
-          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
-          touch yarn.lock
-
+          echo "📦 Installing WebClients dependencies..."
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
           node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
@@ -294,14 +294,13 @@ jobs:
           find artifacts -type f \
             \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \
                -o -name "*.dmg" -o -name "*.app" \
-               -o -name "*.exe" -o -name "*.msi" \) \
+               -o -name "*.exe" -o -name "*.msi" \)
             -exec cp {} release/ \;
           
           # List what we're releasing
           echo "📦 Release artifacts:"
           ls -lah release/
           
-          # Generate checksums
           cd release
           sha256sum * > SHA256SUMS
           cat SHA256SUMS
@@ -397,7 +396,8 @@ jobs:
           cat release_notes.md
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
           files: release/*
           body_path: release_notes.md
