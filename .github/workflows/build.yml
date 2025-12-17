@@ -66,7 +66,7 @@ jobs:
           echo "🔧 Patching dependencies..."
           python3 fix_deps.py
           
-          # Remove lockfile to force fresh resolution
+          # Removed rm -f WebClients/yarn.lock to keep cloned lockfile
 
       - name: Build WebClients (Proton Drive)
         run: |
@@ -74,8 +74,7 @@ jobs:
           
           cd WebClients
           
-          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
-          touch yarn.lock
+          # Removed touch yarn.lock - now uses the cloned yarn.lock
 
           echo "📦 Installing WebClients dependencies..."
           export NODE_OPTIONS="--max-old-space-size=8192"
@@ -93,7 +92,7 @@ jobs:
           echo "✅ WebClients build complete"
           ls -la applications/drive/build/
           
-          cd ..
+          cd ㅋㅋ
 
       - name: Install Tauri dependencies
         run: yarn install
@@ -105,7 +104,8 @@ jobs:
           
           echo "✅ Tauri build complete"
           find src-tauri/target/release/bundle -type f \
-            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \)
+            \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \
+            \)
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
@@ -153,7 +153,7 @@ jobs:
           echo "🔧 Patching dependencies..."
           python3 fix_deps.py
           
-          # Remove lockfile to force fresh resolution
+          # Removed rm -f WebClients/yarn.lock to keep cloned lockfile
 
       - name: Build WebClients (Proton Drive)
         run: |
@@ -162,9 +162,9 @@ jobs:
           
           export NODE_OPTIONS="--max-old-space-size=8192"
           
-          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
-          touch yarn.lock
+          # Removed touch yarn.lock - now uses the cloned yarn.lock
 
+          echo "📦 Installing WebClients dependencies..."
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
           node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
@@ -183,7 +183,8 @@ jobs:
           yarn tauri build -- --bundles app,dmg
           
           find src-tauri/target/release/bundle -type f \
-            \( -name "*.app" -o -name "*.dmg" \)
+            \( -name "*.app" -o -name "*.dmg" \
+            \)
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -233,7 +234,7 @@ jobs:
           echo "🔧 Patching dependencies..."
           python fix_deps.py
           
-          # Remove lockfile to force fresh resolution
+          # Removed rm -f WebClients/yarn.lock to keep cloned lockfile
 
       - name: Build WebClients (Proton Drive)
         shell: bash
@@ -243,9 +244,9 @@ jobs:
           
           export NODE_OPTIONS="--max-old-space-size=8192"
           
-          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
-          touch yarn.lock
+          # Removed touch yarn.lock - now uses the cloned yarn.lock
 
+          echo "📦 Installing WebClients dependencies..."
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
           node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
@@ -296,7 +297,7 @@ jobs:
           find artifacts -type f \
             \( -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \
                -o -name "*.dmg" -o -name "*.app" \
-               -o -name "*.exe" -o -name "*.msi" \) \
+               -o -name "*.exe" -o -name "*.msi" \)
             -exec cp {} release/ \;
           
           # List what we're releasing
@@ -310,96 +311,8 @@ jobs:
           cd ..
 
       - name: Create release notes
-        id: release_notes
-        run: |
-          cat > release_notes.md << 'EOF'
-          # 🚀 Proton Drive Desktop ${{ github.ref_name }}
-          
-          Unofficial desktop client for Proton Drive built with Tauri.
-          
-          ## 📥 Installation
-          
-          ### Linux
-          
-          **AppImage (Universal - recommended)**
-          ```bash
-          # Download and run
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/proton-drive_*_amd64.AppImage
-          chmod +x proton-drive_*_amd64.AppImage
-          ./proton-drive_*_amd64.AppImage
-          ```
-          
-          **Debian/Ubuntu (.deb)**
-          ```bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/proton-drive_*_amd64.deb
-          sudo dpkg -i proton-drive_*_amd64.deb
-          sudo apt-get install -f  # Fix dependencies if needed
-          ```
-          
-          **Fedora/RHEL (.rpm)**
-          ```bash
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/proton-drive-*.x86_64.rpm
-          sudo dnf install proton-drive-*.x86_64.rpm
-          ```
-          
-          ### macOS
-          
-          **DMG Installer**
-          ```bash
-          # Download and install
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Proton-Drive_*_x64.dmg
-          open Proton-Drive_*_x64.dmg
-          # Drag to Applications folder
-          ```
-          
-          ### Windows
-          
-          **MSI Installer (recommended)**
-          - Download `Proton-Drive_*_x64_en-US.msi`
-          - Double-click to install
-          
-          **EXE Installer**
-          - Download `Proton-Drive_*_x64-setup.exe`
-          - Run as administrator
-          
-          ## ✅ Verify Download
-          
-          ```bash
-          # Download checksums
-          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/SHA256SUMS
-          
-          # Verify (Linux/macOS)
-          sha256sum -c SHA256SUMS
-          
-          # Verify (Windows PowerShell)
-          Get-FileHash .\proton-drive_*.msi -Algorithm SHA256
-          ```
-          
-          ## 🔒 Security Note
-          
-          This is an **unofficial** desktop wrapper around the official Proton Drive web application. The wrapper is open source, but the Proton Drive web app itself is proprietary.
-          
-          ## 📝 What's New
-          
-          - Built from latest ProtonMail WebClients
-          - Native desktop integration
-          - System tray support
-          - Offline capability
-          
-          ## 🐛 Report Issues
-          
-          Found a bug? [Open an issue](https://github.com/${{ github.repository }}/issues)
-          
-          ---
-          
-          **Built with:** Tauri + ProtonMail WebClients  
-          **License:** AGPL-3.0
-          EOF
-          
-          cat release_notes.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        id: create_release
+        uses: softprops/action-gh-release@v1
         with:
           files: release/*
           body_path: release_notes.md
