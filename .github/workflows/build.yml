@@ -67,7 +67,6 @@ jobs:
           python3 fix_deps.py
           
           # Remove lockfile to force fresh resolution
-          rm -f WebClients/yarn.lock
 
       - name: Build WebClients (Proton Drive)
         run: |
@@ -75,6 +74,9 @@ jobs:
           
           cd WebClients
           
+          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
+          touch yarn.lock
+
           echo "📦 Installing WebClients dependencies..."
           export NODE_OPTIONS="--max-old-space-size=8192"
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
@@ -152,7 +154,6 @@ jobs:
           python3 fix_deps.py
           
           # Remove lockfile to force fresh resolution
-          rm -f WebClients/yarn.lock
 
       - name: Build WebClients (Proton Drive)
         run: |
@@ -161,6 +162,9 @@ jobs:
           
           export NODE_OPTIONS="--max-old-space-size=8192"
           
+          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
+          touch yarn.lock
+
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
           node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
@@ -228,7 +232,6 @@ jobs:
           python fix_deps.py
           
           # Remove lockfile to force fresh resolution
-          rm -f WebClients/yarn.lock
 
       - name: Build WebClients (Proton Drive)
         shell: bash
@@ -238,6 +241,9 @@ jobs:
           
           export NODE_OPTIONS="--max-old-space-size=8192"
           
+          # Create empty yarn.lock to avoid "Usage Error: The nearest package directory (...) doesn't seem to be part of the project declared in (...)"
+          touch yarn.lock
+
           node .yarn/releases/yarn-4.12.0.cjs install --network-timeout 600000
           node .yarn/releases/yarn-4.12.0.cjs workspace proton-drive build
           
